@@ -1,0 +1,40 @@
+import instance from "./axios_Instance";
+
+
+export const LoginUser = async (data) => {
+    return await instance.post('/admin/login', data)
+}
+
+export const UploadImage = async (formData) => {
+    return await instance.post("/admin/images-upload", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+}
+
+export const UpdateImage = async (formData) => {
+    return await instance.post(`/admin/images-update`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+}
+
+export const GetImages = async (data) => {
+    return await instance.get('/admin/all-images', data)
+}
+
+export const GetUsers = async (data) => {
+    return await instance.get('/admin/get-users', data)
+}
+
+
+export const SyncUser = async (data) => {
+    return await instance.post('/admin/sync-user', data)
+}
+
+
+export const SendEmail = async (data) => {
+    return await instance.post('/admin/send-email', data)
+}
