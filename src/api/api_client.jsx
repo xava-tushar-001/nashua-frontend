@@ -38,3 +38,7 @@ export const SyncUser = async (data) => {
 export const SendEmail = async (data) => {
     return await instance.post('/admin/send-email', data)
 }
+
+export const EmailTemplate = async (data) => {
+    return await instance.get('/admin/email-template', data)
+}

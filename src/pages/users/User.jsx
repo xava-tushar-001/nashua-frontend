@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { GetUsers, SyncUser, SendEmail } from "../../api/api_client";
+import { GetUsers, SyncUser, SendEmail, EmailTemplate } from "../../api/api_client";
 import { toast } from "react-toastify";
 import { Search, RefreshCw, Mail, X, Send, User as UserIcon, CheckCircle, XCircle, Crown, Star, Users as UsersIcon } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export default function User() {
   const [users, setUsers] = useState([]);
@@ -12,10 +13,20 @@ export default function User() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailOption, setEmailOption] = useState("free");
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
+
+
 
   useEffect(() => {
     fetchUsers();
+    GetEmailTemplate();
   }, [page]);
+
+  const selectedTemplateData = templates.find(
+    (item) => item.id === selectedTemplate
+  );
 
   const fetchUsers = async (searchValue = search) => {
     try {
@@ -62,13 +73,21 @@ export default function User() {
     setShowEmailModal(true);
   };
 
-  const handleConfirmSendEmail = async () => {
-    console.log("Email Details:");
-    console.log("Selected Plan Option:", emailOption);
-    console.log("Message:", `Sending ${emailOption} plan email to all relevant users`);
+  const GetEmailTemplate = async () => {
+    try {
+      let response = await EmailTemplate()
+      setTemplates(response?.data?.body?.data?.templates || []);
 
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleConfirmSendEmail = async () => {
     let SendEmails = await SendEmail({
-      type: emailOption
+      type: emailOption,
+      template_id: selectedTemplate,
     })
 
     toast.success(`Email sent to all users with ${emailOption} plan option!`);
@@ -77,7 +96,7 @@ export default function User() {
   };
 
   const getPlanBadgeColor = (plan) => {
-    switch(plan?.toLowerCase()) {
+    switch (plan?.toLowerCase()) {
       case 'paid':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'premium':
@@ -88,7 +107,7 @@ export default function User() {
   };
 
   const getPlanIcon = (plan) => {
-    switch(plan?.toLowerCase()) {
+    switch (plan?.toLowerCase()) {
       case 'paid':
         return <Star className="w-4 h-4" />;
       case 'premium':
@@ -128,7 +147,7 @@ export default function User() {
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={handleSearch}
@@ -236,20 +255,18 @@ export default function User() {
 
                       {/* Status */}
                       <td className="p-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                          user.membership_plan === "paid" 
-                            ? "bg-green-100 text-green-700" 
-                            : user.membership_plan === "premium"
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${user.membership_plan === "paid"
+                          ? "bg-green-100 text-green-700"
+                          : user.membership_plan === "premium"
                             ? "bg-purple-100 text-purple-700"
                             : "bg-gray-100 text-gray-700"
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full ${
-                            user.membership_plan === "paid" 
-                              ? "bg-green-500" 
-                              : user.membership_plan === "premium"
+                          }`}>
+                          <div className={`w-2 h-2 rounded-full ${user.membership_plan === "paid"
+                            ? "bg-green-500"
+                            : user.membership_plan === "premium"
                               ? "bg-purple-500"
                               : "bg-gray-500"
-                          }`} />
+                            }`} />
                           <span className="capitalize">{user.membership_plan || "free"}</span>
                         </span>
                       </td>
@@ -280,7 +297,7 @@ export default function User() {
             >
               Previous
             </button>
-            
+
             <div className="flex items-center gap-2">
               {[...Array(Math.min(5, totalPages))].map((_, i) => {
                 let pageNum;
@@ -293,23 +310,22 @@ export default function User() {
                 } else {
                   pageNum = page - 2 + i;
                 }
-                
+
                 return (
                   <button
                     key={i}
                     onClick={() => setPage(pageNum)}
-                    className={`w-10 h-10 rounded-lg transition-all ${
-                      page === pageNum
-                        ? "bg-blue-600 text-white"
-                        : "border border-gray-300 hover:bg-gray-50"
-                    }`}
+                    className={`w-10 h-10 rounded-lg transition-all ${page === pageNum
+                      ? "bg-blue-600 text-white"
+                      : "border border-gray-300 hover:bg-gray-50"
+                      }`}
                   >
                     {pageNum}
                   </button>
                 );
               })}
             </div>
-            
+
             <button
               disabled={page === totalPages}
               onClick={() => setPage((prev) => prev + 1)}
@@ -324,9 +340,9 @@ export default function User() {
       {/* Email Modal */}
       {showEmailModal && (
         <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-xl w-full animate-fadeIn">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <Mail className="w-6 h-6 text-green-600" />
                 <h2 className="text-xl font-semibold text-gray-800">Send Email to Users</h2>
@@ -340,8 +356,8 @@ export default function User() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="p-4 space-y-2">
+              <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-blue-800">
                   <strong>Info:</strong> This will send emails to users based on their selected plan type.
                 </p>
@@ -354,11 +370,10 @@ export default function User() {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => setEmailOption("free")}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      emailOption === "free"
-                        ? "bg-gray-900 text-white ring-2 ring-offset-2 ring-gray-900"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    className={`px-3 py-2 rounded-lg font-medium transition-all ${emailOption === "free"
+                      ? "bg-gray-900 text-white ring-2 ring-offset-2 ring-gray-900"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <UserIcon className="w-5 h-5" />
@@ -368,11 +383,10 @@ export default function User() {
 
                   <button
                     onClick={() => setEmailOption("paid")}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      emailOption === "paid"
-                        ? "bg-green-600 text-white ring-2 ring-offset-2 ring-green-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all ${emailOption === "paid"
+                      ? "bg-green-600 text-white ring-2 ring-offset-2 ring-green-600"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <Star className="w-5 h-5" />
@@ -382,11 +396,10 @@ export default function User() {
 
                   <button
                     onClick={() => setEmailOption("premium")}
-                    className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                      emailOption === "premium"
-                        ? "bg-purple-600 text-white ring-2 ring-offset-2 ring-purple-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all ${emailOption === "premium"
+                      ? "bg-purple-600 text-white ring-2 ring-offset-2 ring-purple-600"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <Crown className="w-5 h-5" />
@@ -396,19 +409,132 @@ export default function User() {
                 </div>
               </div>
 
+              {/* Template Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Email Template
+                </label>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-xl hover:border-green-500 transition-all shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-green-600" />
+                      </div>
+
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-800">
+                          {selectedTemplateData?.name || "Choose Template"}
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          {selectedTemplateData?.type || "Select email template"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-500 transition-transform ${showTemplateDropdown ? "rotate-180" : ""
+                        }`}
+                    />
+                  </button>
+
+                  {/* Dropdown */}
+                  {showTemplateDropdown && (
+                    <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
+                      <div className="max-h-72 overflow-y-auto">
+                        {templates.map((template) => (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTemplate(template.id);
+                              setShowTemplateDropdown(false);
+                            }}
+                            className={`w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-none ${selectedTemplate === template.id
+                              ? "bg-green-50"
+                              : ""
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedTemplate === template.id
+                                  ? "bg-green-100"
+                                  : "bg-gray-100"
+                                  }`}
+                              >
+                                <Mail
+                                  className={`w-5 h-5 ${selectedTemplate === template.id
+                                    ? "text-green-600"
+                                    : "text-gray-500"
+                                    }`}
+                                />
+                              </div>
+
+                              <div className="text-left">
+                                <p className="text-sm font-semibold text-gray-800 capitalize">
+                                  {template.name}
+                                </p>
+
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    {template.type}
+                                  </span>
+
+                                  {template.active ? (
+                                    <span className="px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full">
+                                      Active
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full">
+                                      Inactive
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {selectedTemplate === template.id && (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">Summary:</p>
+
                 <p className="text-sm text-gray-800">
-                  Sending email to <strong className="capitalize">{emailOption}</strong> users
+                  Sending email to{" "}
+                  <strong className="capitalize">{emailOption}</strong> users
                 </p>
+
+                <p className="text-sm text-gray-800 mt-1">
+                  Template:{" "}
+                  <strong>
+                    {templates.find((t) => t.id == selectedTemplate)?.name || "Not Selected"}
+                  </strong>
+                </p>
+
                 <p className="text-xs text-gray-500 mt-1">
                   All users with {emailOption} membership plan will receive this email
                 </p>
               </div>
+
+
             </div>
 
             {/* Modal Footer */}
-            <div className="flex gap-3 p-6 border-t border-gray-200">
+            <div className="flex gap-2 p-4 border-t border-gray-200">
               <button
                 onClick={() => setShowEmailModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
