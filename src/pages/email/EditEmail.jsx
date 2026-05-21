@@ -27,12 +27,14 @@ export default function EditEmail() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [template, setTemplate] = useState({
+    const emptyTemplate = {
         name: "",
         subject: "",
         html_content: "",
         dynamic_constants: [],
-    });
+    };
+
+    const [template, setTemplate] = useState(emptyTemplate);
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -51,9 +53,23 @@ export default function EditEmail() {
         try {
             setLoading(true);
             const response = await SingleTemplate({ id });
-            const temp = response?.data?.body?.template;
-            setTemplate(temp);
-            generatePreview(temp);
+            const temp =
+                response?.data?.body?.template ||
+                response?.data?.body ||
+                response?.data ||
+                emptyTemplate;
+
+            const normalizedTemplate = {
+                ...emptyTemplate,
+                ...temp,
+                dynamic_constants: Array.isArray(temp?.dynamic_constants)
+                    ? temp.dynamic_constants
+                    : [],
+                html_content: temp?.html_content || "",
+            };
+
+            setTemplate(normalizedTemplate);
+            generatePreview(normalizedTemplate);
         } catch (error) {
             console.log(error);
             toast.error("Failed to load template");
@@ -74,18 +90,6 @@ export default function EditEmail() {
     const handleDynamicChange = (index, value) => {
         const updatedConstants = [...template.dynamic_constants];
         updatedConstants[index].value = value;
-
-        const newTemplate = {
-            ...template,
-            dynamic_constants: updatedConstants,
-        };
-        setTemplate(newTemplate);
-        generatePreview(newTemplate);
-    };
-
-    const handleDynamicKeyChange = (index, newKey) => {
-        const updatedConstants = [...template.dynamic_constants];
-        updatedConstants[index].key = newKey;
 
         const newTemplate = {
             ...template,
@@ -194,17 +198,20 @@ export default function EditEmail() {
     };
 
     const generatePreview = (temp = template) => {
-        let updatedHtml = temp.html_content;
+        let updatedHtml = temp?.html_content || "";
 
         temp.dynamic_constants?.forEach((item) => {
-            const regex = new RegExp(`\\$\\{${item.key}\\}`, "g");
+            const escapedKey = String(item.key).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(`\\$\\{${escapedKey}\\}`, "g");
             const value = item.value || `{{${item.key}}}`;
-            updatedHtml = updatedHtml.replace(regex, value);
+            updatedHtml = updatedHtml.replace(regex, () => value);
         });
 
         setPreviewHtml(updatedHtml);
         return updatedHtml;
     };
+
+    const previewDocument = previewHtml || "<!DOCTYPE html><html><body></body></html>";
 
     const handleUpdate = async () => {
         try {
@@ -639,10 +646,14 @@ export default function EditEmail() {
                                             </span>
                                         </div>
                                     )}
-                                    <div
-                                        className="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 min-h-[400px] overflow-auto"
-                                        dangerouslySetInnerHTML={{ __html: previewHtml }}
-                                    />
+                                    <div className="border-2 border-gray-200 rounded-xl bg-gray-100 overflow-hidden">
+                                        <iframe
+                                            title="Email HTML preview"
+                                            srcDoc={previewDocument}
+                                            className="block w-full h-[640px] bg-white"
+                                            sandbox=""
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -764,3 +775,40 @@ export default function EditEmail() {
         </div>
     );
 }
+
+
+
+// import { useState } from "react";
+
+// export default function App() {
+//   const [html, setHtml] = useState("<h1>Hello</h1>");
+
+//   return (
+//     <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
+      
+//       {/* Editor */}
+//       <textarea
+//         value={html}
+//         onChange={(e) => setHtml(e.target.value)}
+//         style={{
+//           width: "50%",
+//           height: "400px",
+//           fontSize: "16px",
+//           padding: "10px",
+//         }}
+//       />
+
+//       {/* Preview */}
+//       <iframe
+//         title="preview"
+//         srcDoc={html}
+//         style={{
+//           width: "50%",
+//           height: "400px",
+//           border: "1px solid #ccc",
+//           background: "white",
+//         }}
+//       />
+//     </div>
+//   );
+// }
