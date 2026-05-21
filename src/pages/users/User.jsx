@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { GetUsers, SyncUser, SendEmail, EmailTemplate, TestEmail } from "../../api/api_client";
+import { GetUsers, SyncUser, SendEmail, EmailTemplate, TestEmail, GetTemplate } from "../../api/api_client";
 import { toast } from "react-toastify";
 import { Search, RefreshCw, Mail, X, Send, User as UserIcon, CheckCircle, XCircle, Crown, Star, Users as UsersIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
@@ -29,7 +29,7 @@ export default function User() {
   }, [page]);
 
   const selectedTemplateData = templates.find(
-    (item) => item.id === selectedTemplate
+    (item) => item._id === selectedTemplate
   );
 
   const fetchUsers = async (searchValue = search) => {
@@ -79,10 +79,8 @@ export default function User() {
 
   const GetEmailTemplate = async () => {
     try {
-      let response = await EmailTemplate()
-      setTemplates(response?.data?.body?.data?.templates || []);
-
-
+      let response = await GetTemplate()
+      setTemplates(response?.data?.body?.templates || []);
     } catch (error) {
       console.log(error)
     }
@@ -494,10 +492,10 @@ export default function User() {
                       <div className="max-h-72 overflow-y-auto">
                         {templates.map((template) => (
                           <button
-                            key={template.id}
+                            key={template._id}
                             type="button"
                             onClick={() => {
-                              setSelectedTemplate(template.id);
+                              setSelectedTemplate(template._id);
                               setShowTemplateDropdown(false);
                             }}
                             className={`w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-none ${selectedTemplate === template.id
@@ -527,23 +525,14 @@ export default function User() {
 
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-xs text-gray-500">
-                                    {template.type}
+                                    {template.subject}
                                   </span>
 
-                                  {template.active ? (
-                                    <span className="px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full">
-                                      Active
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full">
-                                      Inactive
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
 
-                            {selectedTemplate === template.id && (
+                            {selectedTemplate === template._id && (
                               <CheckCircle className="w-5 h-5 text-green-600" />
                             )}
                           </button>
@@ -566,7 +555,7 @@ export default function User() {
                 <p className="text-sm text-gray-800 mt-1">
                   Template:{" "}
                   <strong>
-                    {templates.find((t) => t.id == selectedTemplate)?.name || "Not Selected"}
+                    {templates.find((t) => t._id == selectedTemplate)?.name || "Not Selected"}
                   </strong>
                 </p>
 
@@ -660,14 +649,14 @@ export default function User() {
                     <div className="text-left">
                       <p className="font-medium text-gray-800">
                         {
-                          templates.find((t) => t.id === testTemplate)?.name ||
+                          templates.find((t) => t._id === testTemplate)?.name ||
                           "Choose Template"
                         }
                       </p>
 
                       <p className="text-xs text-gray-500">
                         {
-                          templates.find((t) => t.id === testTemplate)?.type ||
+                          templates.find((t) => t._id === testTemplate)?.type ||
                           "Select email template"
                         }
                       </p>
@@ -684,10 +673,10 @@ export default function User() {
                       <div className="max-h-64 overflow-y-auto">
                         {templates.map((template) => (
                           <button
-                            key={template.id}
+                            key={template._id}
                             type="button"
                             onClick={() => {
-                              setTestTemplate(template.id);
+                              setTestTemplate(template._id);
                               setTestDropdown(false);
                             }}
                             className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-none ${testTemplate === template.id
