@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { SingleTemplate, UpdateTemplate } from "../../api/api_client";
+import { SingleTemplate, UpdateTemplate, SingleUpload } from "../../api/api_client";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {
@@ -775,40 +775,3 @@ export default function EditEmail() {
         </div>
     );
 }
-
-
-
-// import { useState } from "react";
-
-// export default function App() {
-//   const [html, setHtml] = useState("<h1>Hello</h1>");
-
-//   return (
-//     <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
-      
-//       {/* Editor */}
-//       <textarea
-//         value={html}
-//         onChange={(e) => setHtml(e.target.value)}
-//         style={{
-//           width: "50%",
-//           height: "400px",
-//           fontSize: "16px",
-//           padding: "10px",
-//         }}
-//       />
-
-//       {/* Preview */}
-//       <iframe
-//         title="preview"
-//         srcDoc={html}
-//         style={{
-//           width: "50%",
-//           height: "400px",
-//           border: "1px solid #ccc",
-//           background: "white",
-//         }}
-//       />
-//     </div>
-//   );
-// }

@@ -59,3 +59,12 @@ export const SingleTemplate = async (data) => {
 export const UpdateTemplate = async (data) => {
     return await instance.post(`/admin/update-template`, data)
 }
+
+
+export const SingleUpload = async (formData) => {
+    return await instance.post("/admin/single-upload", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+}
