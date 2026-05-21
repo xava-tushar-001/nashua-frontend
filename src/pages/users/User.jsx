@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { GetUsers, SyncUser, SendEmail, EmailTemplate } from "../../api/api_client";
+import { GetUsers, SyncUser, SendEmail, EmailTemplate, TestEmail } from "../../api/api_client";
 import { toast } from "react-toastify";
 import { Search, RefreshCw, Mail, X, Send, User as UserIcon, CheckCircle, XCircle, Crown, Star, Users as UsersIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
@@ -16,7 +16,11 @@ export default function User() {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
-
+  const [showTestEmailModal, setShowTestEmailModal] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testTemplate, setTestTemplate] = useState("");
+  const [testDropdown, setTestDropdown] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
 
   useEffect(() => {
@@ -117,6 +121,38 @@ export default function User() {
     }
   };
 
+
+  const handleSendTestEmail = async () => {
+    try {
+      if (!testEmail) {
+        return toast.error("Please enter email");
+      }
+
+      if (!testTemplate) {
+        return toast.error("Please select template");
+      }
+
+      setSendingTestEmail(true);
+
+      await TestEmail({
+        template_id: testTemplate,
+        emails: [testEmail],
+      });
+
+      toast.success("Test email sent successfully!");
+
+      setShowTestEmailModal(false);
+      setTestEmail("");
+      setTestTemplate("");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to send test email"
+      );
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br p-6">
       {/* Header Section */}
@@ -173,6 +209,15 @@ export default function User() {
                 <Mail className="w-4 h-4" />
                 Send Email to Users
               </button>
+
+              <button
+                onClick={() => setShowTestEmailModal(true)}
+                className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105"
+              >
+                <Send className="w-4 h-4" />
+                Test Email
+              </button>
+
             </div>
           </div>
         </div>
@@ -547,6 +592,158 @@ export default function User() {
               >
                 <Send className="w-4 h-4" />
                 Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test Email Modal */}
+      {showTestEmailModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full animate-fadeIn">
+
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <Send className="w-5 h-5 text-orange-600" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Send Test Email
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Send email to a specific address
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowTestEmailModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-5">
+
+              {/* Email Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+
+                <input
+                  type="email"
+                  placeholder="Enter email address"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Template
+                </label>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTestDropdown(!testDropdown)}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-xl hover:border-orange-500 transition-all"
+                  >
+                    <div className="text-left">
+                      <p className="font-medium text-gray-800">
+                        {
+                          templates.find((t) => t.id === testTemplate)?.name ||
+                          "Choose Template"
+                        }
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        {
+                          templates.find((t) => t.id === testTemplate)?.type ||
+                          "Select email template"
+                        }
+                      </p>
+                    </div>
+
+                    <ChevronDown
+                      className={`w-5 h-5 transition-transform ${testDropdown ? "rotate-180" : ""
+                        }`}
+                    />
+                  </button>
+
+                  {testDropdown && (
+                    <div className="absolute mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="max-h-64 overflow-y-auto">
+                        {templates.map((template) => (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => {
+                              setTestTemplate(template.id);
+                              setTestDropdown(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-none ${testTemplate === template.id
+                                ? "bg-orange-50"
+                                : ""
+                              }`}
+                          >
+                            <p className="font-medium text-gray-800 capitalize">
+                              {template.name}
+                            </p>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                              {template.type}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
+                <p className="text-sm text-gray-700">
+                  <strong>Email:</strong>{" "}
+                  {testEmail || "Not entered"}
+                </p>
+
+                <p className="text-sm text-gray-700 mt-1">
+                  <strong>Template:</strong>{" "}
+                  {templates.find((t) => t.id === testTemplate)?.name ||
+                    "Not selected"}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-5 border-t">
+              <button
+                onClick={() => setShowTestEmailModal(false)}
+                className="flex-1 py-3 border border-gray-300 rounded-xl hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSendTestEmail}
+                disabled={sendingTestEmail}
+                className="flex-1 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+
+                {sendingTestEmail
+                  ? "Sending..."
+                  : "Send Test Email"}
               </button>
             </div>
           </div>

@@ -7,6 +7,8 @@ import Login from "../pages/login/Login";
 import Home from "../pages/Home";
 import Image from "../pages/images/Image";
 import User from "../pages/users/User";
+import Template from "../pages/email/Template";
+import EditEmail from "../pages/email/EditEmail";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +24,8 @@ export const router = createBrowserRouter([
           { path: "/", element: <Home /> },
           { path: "/image", element: <Image /> },
           { path: "/users", element: <User /> },
-
+          { path: "/template", element: <Template /> },
+          { path: "/edit-email/:id", element: <EditEmail /> },
         ],
       },
     ],

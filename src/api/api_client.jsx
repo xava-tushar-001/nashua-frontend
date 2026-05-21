@@ -42,3 +42,20 @@ export const SendEmail = async (data) => {
 export const EmailTemplate = async (data) => {
     return await instance.get('/admin/email-template', data)
 }
+
+export const TestEmail = async (data) => {
+    return await instance.post('/admin/test-email', data)
+}
+
+export const GetTemplate = async (data) => {
+    return await instance.get('/admin/get-template', data)
+}
+
+export const SingleTemplate = async (data) => {
+    return await instance.get(`/admin/single-template?id=${data.id}`, data)
+}
+
+
+export const UpdateTemplate = async (data) => {
+    return await instance.post(`/admin/update-template`, data)
+}
