@@ -20,7 +20,9 @@ import {
     Trash2,
     X,
     Move,
-    GripVertical
+    GripVertical,
+    Upload,
+    Image as ImageIcon
 } from "lucide-react";
 
 export default function EditEmail() {
@@ -44,6 +46,7 @@ export default function EditEmail() {
     const [newVariableKey, setNewVariableKey] = useState("");
     const [newVariableValue, setNewVariableValue] = useState("");
     const [showAddModal, setShowAddModal] = useState(false);
+    const [uploadingImageFor, setUploadingImageFor] = useState(null);
 
     useEffect(() => {
         getTemplate();
@@ -97,6 +100,42 @@ export default function EditEmail() {
         };
         setTemplate(newTemplate);
         generatePreview(newTemplate);
+    };
+
+    const handleVariableImageUpload = async (file, target) => {
+        if (!file) return;
+
+        try {
+            setUploadingImageFor(target);
+
+            const payload = new FormData();
+            payload.append("image", file);
+
+            const response = await SingleUpload(payload);
+            const imageUrl = response?.data?.body?.image;
+
+            if (!imageUrl) {
+                toast.error("Image uploaded, but no image URL was returned");
+                return;
+            }
+
+            if (target === "add" || target === "edit") {
+                setNewVariableValue(imageUrl);
+            } else {
+                handleDynamicChange(target, imageUrl);
+            }
+
+            toast.success(response?.data?.message || "Image uploaded successfully");
+        } catch (error) {
+            console.log(error);
+            toast.error(error?.response?.data?.message || "Failed to upload image");
+        } finally {
+            setUploadingImageFor(null);
+        }
+    };
+
+    const isImageUrl = (value) => {
+        return /^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(value || "");
     };
 
     const addNewVariable = () => {
@@ -408,13 +447,46 @@ export default function EditEmail() {
                                                             </div>
                                                             <div className="flex-1">
                                                                 <label className="block text-xs font-semibold text-gray-600 mb-1">Default Value (Optional)</label>
-                                                                <input
-                                                                    type="text"
-                                                                    value={newVariableValue}
-                                                                    onChange={(e) => setNewVariableValue(e.target.value)}
-                                                                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 focus:border-blue-500 outline-none"
-                                                                    placeholder="Default value"
-                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={newVariableValue}
+                                                                        onChange={(e) => setNewVariableValue(e.target.value)}
+                                                                        className="min-w-0 flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 focus:border-blue-500 outline-none"
+                                                                        placeholder="Default value or uploaded image URL"
+                                                                    />
+                                                                    <input
+                                                                        id={`edit-variable-image-${index}`}
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        className="hidden"
+                                                                        onChange={(e) => {
+                                                                            handleVariableImageUpload(e.target.files?.[0], "edit");
+                                                                            e.target.value = "";
+                                                                        }}
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`edit-variable-image-${index}`}
+                                                                        className={`px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 cursor-pointer ${uploadingImageFor === "edit"
+                                                                                ? "bg-blue-200 text-blue-700 pointer-events-none"
+                                                                                : "bg-blue-600 hover:bg-blue-700 text-white"
+                                                                            }`}
+                                                                    >
+                                                                        {uploadingImageFor === "edit" ? (
+                                                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                                                        ) : (
+                                                                            <Upload className="w-4 h-4" />
+                                                                        )}
+                                                                        Image
+                                                                    </label>
+                                                                </div>
+                                                                {isImageUrl(newVariableValue) && (
+                                                                    <img
+                                                                        src={newVariableValue}
+                                                                        alt="Variable value preview"
+                                                                        className="mt-2 h-16 w-24 rounded-lg object-cover border border-gray-200 bg-white"
+                                                                    />
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <div className="flex gap-2 justify-end">
@@ -451,16 +523,50 @@ export default function EditEmail() {
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <input
-                                                                type="text"
-                                                                value={item.value || ''}
-                                                                onChange={(e) => handleDynamicChange(index, e.target.value)}
-                                                                className={`w-full border rounded-lg px-3 py-1.5 text-sm transition-all ${!item.value
-                                                                        ? 'border-yellow-300 bg-yellow-50 focus:border-blue-500'
-                                                                        : 'border-gray-200 focus:border-blue-500'
-                                                                    } focus:ring-2 focus:ring-blue-200 outline-none`}
-                                                                placeholder={`Enter value for ${item.key}`}
-                                                            />
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={item.value || ''}
+                                                                    onChange={(e) => handleDynamicChange(index, e.target.value)}
+                                                                    className={`min-w-0 flex-1 border rounded-lg px-3 py-1.5 text-sm transition-all ${!item.value
+                                                                            ? 'border-yellow-300 bg-yellow-50 focus:border-blue-500'
+                                                                            : 'border-gray-200 focus:border-blue-500'
+                                                                        } focus:ring-2 focus:ring-blue-200 outline-none`}
+                                                                    placeholder={`Enter value for ${item.key}`}
+                                                                />
+                                                                <input
+                                                                    id={`variable-image-${item._id || index}`}
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="hidden"
+                                                                    onChange={(e) => {
+                                                                        handleVariableImageUpload(e.target.files?.[0], index);
+                                                                        e.target.value = "";
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`variable-image-${item._id || index}`}
+                                                                    className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1 cursor-pointer ${uploadingImageFor === index
+                                                                            ? "bg-purple-200 text-purple-700 pointer-events-none"
+                                                                            : "bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                                                        }`}
+                                                                    title="Upload image as value"
+                                                                >
+                                                                    {uploadingImageFor === index ? (
+                                                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                                                    ) : (
+                                                                        <ImageIcon className="w-4 h-4" />
+                                                                    )}
+                                                                    Upload
+                                                                </label>
+                                                            </div>
+                                                            {isImageUrl(item.value) && (
+                                                                <img
+                                                                    src={item.value}
+                                                                    alt={`${item.key} preview`}
+                                                                    className="mt-2 h-14 w-20 rounded-lg object-cover border border-gray-200 bg-white"
+                                                                />
+                                                            )}
                                                         </div>
 
                                                         <div className="flex gap-1">
@@ -549,13 +655,46 @@ export default function EditEmail() {
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                                 Default Value (Optional)
                                             </label>
-                                            <input
-                                                type="text"
-                                                value={newVariableValue}
-                                                onChange={(e) => setNewVariableValue(e.target.value)}
-                                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none"
-                                                placeholder="Enter a default value"
-                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newVariableValue}
+                                                    onChange={(e) => setNewVariableValue(e.target.value)}
+                                                    className="min-w-0 flex-1 border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all outline-none"
+                                                    placeholder="Enter a value or upload image"
+                                                />
+                                                <input
+                                                    id="new-variable-image"
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        handleVariableImageUpload(e.target.files?.[0], "add");
+                                                        e.target.value = "";
+                                                    }}
+                                                />
+                                                <label
+                                                    htmlFor="new-variable-image"
+                                                    className={`px-4 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 cursor-pointer ${uploadingImageFor === "add"
+                                                            ? "bg-purple-200 text-purple-700 pointer-events-none"
+                                                            : "bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                                        }`}
+                                                >
+                                                    {uploadingImageFor === "add" ? (
+                                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Upload className="w-4 h-4" />
+                                                    )}
+                                                    Upload
+                                                </label>
+                                            </div>
+                                            {isImageUrl(newVariableValue) && (
+                                                <img
+                                                    src={newVariableValue}
+                                                    alt="Variable value preview"
+                                                    className="mt-3 h-20 w-28 rounded-lg object-cover border border-gray-200 bg-white"
+                                                />
+                                            )}
                                         </div>
                                         <div className="flex gap-3">
                                             <button
